@@ -1,5 +1,6 @@
 import pickle
 from datetime import datetime
+from pprint import pprint as print
 
 FILENAME='data_pick.pkl'
 
@@ -47,7 +48,11 @@ class User(object):
         for user in self.users:
             if user['username'] ==current_user['username']:
                 print("User -%s is already register"%current_user['username'])
-                return
+                if input('return to main menu? ')=="1":
+                    print('going to menu\n')
+                    mainMenu(self)
+                return    
+
         save_data(FILENAME,current_user,self.users)
         print("User -%s is succesfully register"%current_user['username'])
         print(self.users)
@@ -107,7 +112,7 @@ class User(object):
         content=input('enter your new Journal content: ')
         self.user['journals'].append({
             'content':content,
-            'timestamp':datetime.now().time()
+            'timestamp':datetime.now().strftime("%H:%M:%S")
         })
         print('umodified user is %s\n'%self.user)
         # index=self.users.index(self.user)
@@ -117,6 +122,23 @@ class User(object):
         if input('return to main menu? ')=="1":
             print('going to menu\n')
             mainMenu(self)
+
+    def viewJournals(self):
+        if not self.isLoggedIn:
+            print('not authenticated\n')
+            if input('return to main menu?\n')=="1":
+                print('going to menu\n')
+                mainMenu(self)
+            else:
+                return
+
+        for journal in self.user['journals']:
+            print("%s"%journal)
+        if input('return to main menu? ')=="1":
+            print('going to menu\n')
+            mainMenu(self)
+
+
 
 
 def mainMenu(userObj):
@@ -134,27 +156,26 @@ def mainMenu(userObj):
     if choice=="3":
         userObj.createJournal()
     if choice=="4":
-        print('view your journals!')
+        userObj.viewJournals()
     if choice=="5":
         return
 
 
 
-def createDatabase(data_array):
+def createDatabase():
     data={
         'username':'sample',
         'password':'pass',
         'journals':[{
             'content':'sample journal',
-            'timestamp':datetime.now().time()
+            'timestamp':datetime.now().strftime("%H:%M:%S")
         }]
     }
-    save_data(FILENAME,data,data_array)
+    save_data(FILENAME,data,[])
 
 
 if __name__ == '__main__':
-    # users=[]
-    # createDatabase(users)
+    # createDatabase()
     users=load_data(FILENAME)
     user=User(users)
     mainMenu(user)
