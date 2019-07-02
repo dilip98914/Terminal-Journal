@@ -1,4 +1,3 @@
-import click
 import pickle
 from datetime import datetime
 
@@ -9,128 +8,154 @@ def load_data(FILENAME):
     try:
         with open(FILENAME,'rb') as p_file:
             new_data=pickle.load(p_file)
+            print("loaded data: ")
             print(new_data)
-    except:
+    except Exception as e:
+        print(e)
         print("can;t load file")
     return new_data
 
-def save_data(FILENAME,data,shouldLoad=True,lastParam=False):
-    if shouldLoad:
-        new_data=load_data(FILENAME)
-        if new_data is not None:
-            new_data.append(data)
-    elif(lastParam):
-        new_data=data
+def save_data(FILENAME,data,data_array):
+    if data!=None:
+        data_array.append(data)   
     else:
-        new_data=[data]   
-
+        print('data not appendded as journal just updated')
     try:
         with open(FILENAME,'wb') as p_file:
-            pickle.dump(new_data,p_file)
+            pickle.dump(data_array,p_file)
     except:
         print("can;t save data to file")
 
 
-users=load_data(FILENAME)
+
+class User(object):
+    def __init__(self,users):
+        self.user=None
+        self.users=users
+        self.isLoggedIn=False
 
 
-@click.command()
-@click.option('--username',prompt='enter your username to register', default="name", help='username')
-@click.option('--password',prompt='enter your password to register', default="password", help='password')
-def register(username, password):
-    """Registration"""
-    current_user={
-        'username':username,
-        'password':password
-        }
-    for user in users:
-        if user['username'] ==current_user['username']:
-            click.echo("User -%s is already register"%current_user['username'])
+    def register(self):
+        self.check_Login()
+        username=input('enter username to register: ')
+        password=input('enter password to register: ')
+        current_user={
+            'username':username,
+            'password':password,
+            'journals':[]
+            }
+        for user in self.users:
+            if user['username'] ==current_user['username']:
+                print("User -%s is already register"%current_user['username'])
+                return
+        save_data(FILENAME,current_user,self.users)
+        print("User -%s is succesfully register"%current_user['username'])
+        print(self.users)
+        if input('return to main menu? ')=="1":
+            print('going to menu\n')
+            mainMenu(self)
+
+    def check_Login(self):
+        if self.isLoggedIn:
+            print('user already logged in!')
+            res=input('user needs to logged out? ')
+            if res =="1":
+                self.logout()
             return
-    users.append(current_user)
-    click.echo("User -%s is succesfully register"%current_user['username'])
-    save_data(FILENAME,users,False,True)
-    print(load_data(FILENAME))
-    if click.confirm('return to main menu?'):
-        click.echo('puff...')
-        mainMenu()
+    def logout(self):
+        if self.isLoggedIn:
+            self.isLoggedIn=False
+        self.user=None
 
 
+    def login(self):
+        self.check_Login()
+        username=input('enter username to login: ')
+        password=input('enter password to login: ')
+        current_user={
+            'username':username,
+            'password':password,
+            'journals':[]
+            }
 
-loggedIn=False
+        for user in self.users:
+            if user['username'] ==current_user['username']:
+                print('username is matched\n')
+                if user['password'] ==current_user['password']:
+                    if self.user==None and self.isLoggedIn==False:
+                        print('password is matched\n')
+                        print("User -%s is succesfuly logged In\n"%current_user['username'])
+                        self.isLoggedIn=True
+                        self.user=user
+                        break
+                    else:
+                        print('user seems already logged in!')
+        print(self.users)
+        if input('return to main menu? ')=="1":
+            print('going to menu\n')
+            mainMenu(self)
 
-@click.command()
-@click.option('--username',prompt='enter your username to login', default="name", help='username')
-@click.option('--password',prompt='enter your password to login', default="password", help='password')
-def login(username, password):
-    """Login"""
-    current_user={
-        'username':username,
-        'password':password
-        }
-    for user in users:
-        global loggedIn
-        if user['username'] ==current_user['username']:
-            print('username is matched')
-            if user['password'] ==current_user['password']:
-                click.echo('password is matched')
-                click.echo("User -%s is succesfuly logged In"%current_user['username'])
-                loggedIn=True
-                break
-    if click.confirm('return to main menu?'):
-        click.echo('puff...')
-        mainMenu()
+    def createJournal(self):
+        if not self.isLoggedIn:
+            print('not authenticated\n')
+            if input('return to main menu?\n')=="1":
+                print('going to menu\n')
+                mainMenu(self)
+            else:
+                return
 
-
-
-# @click.command()
-# def createJournal():
-#     """Journal Creation"""
-#     content=click.prompt('enter your new Journal content')
-#     user={
-
-#     }
-#     users.append(current_user)
-#     click.echo("User -%s is succesfully register"%current_user['username'])
-#     save_data(FILENAME,users,False,True)
-#     print(load_data(FILENAME))
-#     if click.confirm('return to main menu?'):
-#         click.echo('puff...')
-#         mainMenu()
-
-
-
-
-@click.command()
-def mainMenu():
-
-    click.echo('\n')
-    click.echo('WELCOME TO COMMAND LINE JOURNAL MANAGER')
-    click.echo('\n')
-    
-    click.echo('You will asked in multiple confimation points to enter different states of application')
-    click.echo('\n')
-
-    click.echo('Such as REgister,Login,CreateJournal,ViewJournal')
-    click.echo('\n')
-
-    click.echo('Login To create account')
-    click.echo('\n')
+        content=input('enter your new Journal content: ')
+        self.user['journals'].append({
+            'content':content,
+            'timestamp':datetime.now().time()
+        })
+        print('umodified user is %s\n'%self.user)
+        # index=self.users.index(self.user)
+        # self.users[index]=newUser
+        save_data(FILENAME,None,self.users)
+        print(self.users)
+        if input('return to main menu? ')=="1":
+            print('going to menu\n')
+            mainMenu(self)
 
 
-    if click.confirm('Do you want to register?'):
-        register()
-    if click.confirm('Do you want to login?'):
-        login()
-    if click.confirm('Do you want to create journal?'):
-        click.echo('create journalQ!')
-    if click.confirm('Do you see journal?'):
-        click.echo('view journals!')
-    if click.confirm('Do you want to exit'):
+def mainMenu(userObj):
+    print('\nWELCOME TO COMMAND LINE JOURNAL MANAGER\n')
+    print('\n1.Register\n')
+    print('\n2.login\n')
+    print('\n3.create new journal\n')
+    print('\n4.view your journals\n')
+    print('\n5.exit\n')
+    choice=input('\nenter your choice: \n')
+    if choice=="1":
+        userObj.register()
+    if choice=="2":
+        userObj.login()
+    if choice=="3":
+        userObj.createJournal()
+    if choice=="4":
+        print('view your journals!')
+    if choice=="5":
         return
-    mainMenu()
 
+
+
+def createDatabase(data_array):
+    data={
+        'username':'sample',
+        'password':'pass',
+        'journals':[{
+            'content':'sample journal',
+            'timestamp':datetime.now().time()
+        }]
+    }
+    save_data(FILENAME,data,data_array)
 
 
 if __name__ == '__main__':
-    mainMenu()
+    # users=[]
+    # createDatabase(users)
+    users=load_data(FILENAME)
+    user=User(users)
+    mainMenu(user)
+
